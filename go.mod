@@ -1,3 +1,3 @@
-module de.tnodecode/gitfinder
+module github.com/TNodeCode/GitFinder
 
-go 1.14
+go 1.17
