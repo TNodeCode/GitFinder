@@ -4,10 +4,8 @@ import (
 	"encoding/csv"
 	"flag"
 	"fmt"
-	"io/ioutil"
 	"log"
 	"os"
-	"os/exec"
 	"sync"
 	"time"
 )
@@ -18,51 +16,6 @@ var (
 	flagCsv     = flag.String("csv", "", "CSV output file name, leave empty if you don't want a CSV file")
 )
 
-/**
- * Search for git projects recursively
- */
-func searchGitProjects(dir string, projectDirs *[][]string, depth int, wg *sync.WaitGroup) {
-	defer wg.Done()
-
-	files, err := ioutil.ReadDir(dir)
-	isProject := false
-
-	if err != nil {
-		panic(err)
-	}
-
-	for _, file := range files {
-		if file.IsDir() && file.Name() == ".git" {
-			cmd := exec.Command("git", "remote", "get-url", "origin")
-			cmd.Dir = dir
-			out, err := cmd.Output()
-			repo := ""
-
-			if err == nil {
-				repo = string(out[0 : len(out)-1]) // Remove '\n'
-			}
-
-			project := []string{dir, repo}
-
-			*projectDirs = append(*projectDirs, project)
-			isProject = true
-		}
-	}
-
-	if !isProject && (depth == -1 || depth > 1) {
-		for _, file := range files {
-			if file.IsDir() && file.Name()[:1] != "_" && file.Name()[:1] != "." {
-				if depth != -1 {
-					depth -= 1
-				}
-
-				wg.Add(1)
-				searchGitProjects(dir+"/"+file.Name(), projectDirs, depth, wg)
-			}
-		}
-	}
-}
-
 func main() {
 	var wg sync.WaitGroup
 
@@ -71,7 +24,7 @@ func main() {
 	ticker := time.NewTicker(5000 * time.Millisecond)
 	done := make(chan bool)
 
-	var projectDirs = [][]string{{"Directory", "Origin"}}
+	var projectDirs = [][]string{{"Directory", "Origin", "Type"}}
 
 	fmt.Printf("Start searching Git projects in %s ...\n", *flagRootDir)
 
